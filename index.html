@@ -1,208 +1,685 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dairy Sensor Node Telemetry</title>
-<style>
-:root{--bg:#11141a;--card:#1b1e24;--cell:#0b0d10;--text:#fff;--muted:#64748b;--blue:#00a2ff;--teal:#00ffcc;--pink:#ff5c7a;--line:#262b33}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:"Inter","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.panel{width:100%;max-width:780px;background:var(--card);border:1px solid var(--line);border-radius:26px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;flex-wrap:wrap}
-.sel{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:14px}
-select{appearance:none;background:#2a2e36 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23cbd5e1' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 14px center;color:#fff;border:0;border-radius:16px;padding:12px 38px 12px 18px;font:600 16px inherit;cursor:pointer}
-select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-.chip{background:#23272e;color:#94a3b8;font-size:13px;padding:8px 16px;border-radius:14px}
-.cell{position:relative;height:340px;background:var(--cell);border-top:1px solid var(--line);overflow:hidden;background-image:linear-gradient(#151a21 1px,transparent 1px),linear-gradient(90deg,#151a21 1px,transparent 1px);background-size:48px 48px}
-.badge{position:absolute;top:18px;left:26px;z-index:5;background:#0f1319;border:1px solid #1f2933;border-radius:8px;padding:6px 12px;font-size:14px;font-weight:600}
-.badge small{display:block;color:var(--muted);font-size:11px;letter-spacing:.04em;font-weight:600}
-.badge i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--blue);margin-right:6px;vertical-align:middle}
-#pb{position:absolute;top:16px;right:22px;z-index:5;width:42px;height:42px;border-radius:50%;border:0;background:#2a2e36;color:#e2e8f0;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer}
-#pb:hover{background:#343a44}
-.pipe{position:absolute;left:0;right:0;top:110px;height:120px;background:#fdfdef;transition:background .4s;border-top:3px solid #2a313b;border-bottom:3px solid #2a313b;box-shadow:0 -5px 0 -2px #0b0d10,0 -7px 0 -2px #1c222b,0 5px 0 -2px #0b0d10,0 7px 0 -2px #1c222b}
-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.glow{position:absolute;top:170px;left:55%;width:220px;height:220px;margin:-110px 0 0 -110px;border-radius:50%;background:radial-gradient(circle,rgba(168,85,247,.55),transparent 65%);opacity:0;transition:opacity .5s;pointer-events:none}
-.probe{position:absolute;top:0;transform:translateX(-50%);width:60px;height:230px;z-index:3}
-.tag{position:absolute;top:50px;left:50%;transform:translateX(-50%);background:#0c1116;color:#fff;font-size:14px;font-weight:600;padding:4px 12px;border-radius:6px;border:1px solid #1e4a44;white-space:nowrap}
-.probe.ec .tag{border-color:#1e4a44}.probe.ph .tag{border-color:#1e4a44}.probe.th .tag{border-color:#5a2434}
-.cap{position:absolute;top:80px;left:50%;transform:translateX(-50%);width:32px;height:16px;background:#2a323b;border-radius:3px 3px 0 0}
-.ec .wire{position:absolute;top:96px;width:4px;height:60px;background:#64748b;border-radius:2px}
-.ec .w1{left:20px}.ec .w2{left:36px}
-.ec .cup{position:absolute;top:138px;width:10px;height:26px;background:var(--blue);border:2px solid #64748b;border-top:0;border-radius:0 0 3px 3px}
-.ec .c1{left:17px}.ec .c2{left:33px}
-.ph .stem{position:absolute;top:96px;left:50%;width:3px;margin-left:-1.5px;height:40px;background:#6d28d9}
-.ph .stem::before{content:"";position:absolute;left:-4px;top:0;width:11px;height:28px;background:#1e2229;z-index:-1}
-.ph .bulb{position:absolute;top:126px;left:50%;width:28px;height:28px;margin-left:-14px;border-radius:50%;background:radial-gradient(circle at 32% 30%,#fff 0,#b8fff0 14%,var(--teal) 55%,#0a7a68 100%);opacity:.9;border:2px solid rgba(255,255,255,var(--ring,0));box-shadow:0 0 16px rgba(0,255,204,.5)}
-.th .body{position:absolute;top:96px;left:50%;width:10px;margin-left:-5px;height:72px;border-radius:5px 5px 6px 6px/5px 5px 8px 8px;background:linear-gradient(#f8fafc 0,#cbd5e1 82%,var(--tip,#ea580c) 82%,var(--tip,#ea580c) 100%);border:1px solid #94a3b8}
-.metrics{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;background:#22262d;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:18px 10px}
-.metrics span{display:block;color:var(--muted);font-size:14px;margin-bottom:6px}
-.metrics b{font-size:17px}
-#status{color:#22c55e;transition:color .4s}#risk{transition:color .4s}
-.ctrls{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;padding:26px 24px 30px}
-.row{display:grid;grid-template-columns:1fr auto;gap:10px 8px;align-items:center}
-.row label{grid-column:1/-1;font-size:15px;color:#e2e8f0;display:flex;align-items:center;gap:8px}
-.row label i{width:9px;height:9px;border-radius:50%;flex:none}
-.row output{font-size:16px;font-weight:700;min-width:74px;text-align:right}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:4px;background:linear-gradient(90deg,#3b6cf6 var(--p,50%),#334155 var(--p,50%));cursor:pointer}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#3b6cf6;border:0;box-shadow:0 0 0 4px rgba(59,108,246,.2)}
-input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#3b6cf6;border:0}
-@media(max-width:640px){.ctrls{grid-template-columns:1fr}.tag{font-size:11px;padding:3px 6px}.chip{display:none}.badge{left:12px}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
-</style>
-</head>
-<body>
-<main class="panel">
-  <header>
-    <div class="sel"><label for="preset">Testing Condition Profile:</label>
-      <select id="preset">
-        <option value="c" hidden>Custom Setup</option>
-        <option value="0">Healthy / Normal</option>
-        <option value="1">Subclinical Activity</option>
-        <option value="2">Clinical Mastitis</option>
-      </select></div>
-    <div class="chip">DIY Multi-Sensor Analytics Node</div>
-  </header>
-
-  <section class="cell">
-    <div class="badge"><small>FLOW DIALOGUE</small><i></i>Raw Milk Inflow Stream</div>
-    <button id="pb" aria-label="Pause or resume flow">II</button>
-    <div class="pipe" id="pipe" style="background:#fdfdef"><canvas id="cv"></canvas></div>
-    <div class="glow" id="glow"></div>
-    <div class="probe ec" style="left:36%"><div class="tag">EC Probe</div><div class="cap"></div><div class="wire w1"></div><div class="wire w2"></div><div class="cup c1"></div><div class="cup c2"></div></div>
-    <div class="probe ph" style="left:55%"><div class="tag">pH Glass Bulb</div><div class="cap"></div><div class="stem"></div><div class="bulb"></div></div>
-    <div class="probe th" style="left:71%"><div class="tag">Thermistor Tip</div><div class="cap"></div><div class="body"></div></div>
-  </section>
-
-  <section class="metrics">
-    <div><span>Alert Index</span><b id="risk">0% Risk</b></div>
-    <div><span>Health Status</span><b id="status">Healthy Milk</b></div>
-    <div><span>Ion Multiplier</span><b id="ion">5.5 Na/Cl</b></div>
-  </section>
-
-  <section class="ctrls">
-    <div class="row"><label for="ec"><i style="background:var(--blue)"></i>Electrical Conductivity</label><input id="ec" type="range" min="4" max="8.5" step="0.1" value="4.8"><output id="ecv">4.8 mS/cm</output></div>
-    <div class="row"><label for="ph"><i style="background:#10d9a0"></i>Milk pH Factor</label><input id="ph" type="range" min="6.2" max="7.6" step="0.05" value="6.6"><output id="phv">6.60 pH</output></div>
-    <div class="row"><label for="tp"><i style="background:var(--pink)"></i>Inline Temperature</label><input id="tp" type="range" min="37" max="42" step="0.1" value="38.5"><output id="tpv">38.5 °C</output></div>
-  </section>
-</main>
-
-<script>
-(function(){
-  var PRESETS={0:{ec:4.8,ph:6.6,tp:38.5},1:{ec:6.2,ph:6.9,tp:39.1},2:{ec:7.8,ph:7.3,tp:40.5}};
-  var el=function(id){return document.getElementById(id)};
-  var ec=el('ec'),ph=el('ph'),tp=el('tp'),sel=el('preset'),cv=el('cv'),ctx=cv.getContext('2d');
-  var running=true,raf=0,tween=0,W=0,H=0;
-  var S={risk:0,ecN:0,phN:0,tN:0,clinical:false};
-  var CLR=[[15,[253,253,239]],[31,[218,218,209]],[48,[196,197,187]],[80,[147,147,133]],[100,[126,127,117]]];
-  function milk(r){
-    if(r<=CLR[0][0])return 'rgb('+CLR[0][1]+')';
-    for(var i=1;i<CLR.length;i++){
-      if(r<=CLR[i][0]){var a=CLR[i-1],b=CLR[i],k=(r-a[0])/(b[0]-a[0]);
-        return 'rgb('+a[1].map(function(v,n){return Math.round(v+(b[1][n]-v)*k)}).join(',')+')'}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dairy Sensor Node Telemetry</title>
+  <style>
+    :root {
+      --bg: #11141a;
+      --card: #1b1e24;
+      --cell: #0b0d10;
+      --text: #fff;
+      --muted: #64748b;
+      --blue: #00a2ff;
+      --teal: #00ffcc;
+      --pink: #ff5c7a;
+      --line: #262b33
     }
-    return 'rgb('+CLR[CLR.length-1][1]+')';
-  }
-  function lerp(a,b,t){return a+(b-a)*t}
-  var cl=function(v,a,b){return Math.max(a,Math.min(b,v))};
 
-  function update(){
-    var e=+ec.value,p=+ph.value,t=+tp.value;
-    [ec,ph,tp].forEach(function(r){r.style.setProperty('--p',((r.value-r.min)/(r.max-r.min)*100)+'%')});
-    el('ecv').textContent=e.toFixed(1)+' mS/cm';
-    el('phv').textContent=p.toFixed(2)+' pH';
-    el('tpv').textContent=t.toFixed(1)+' °C';
-    /* alert index: EC up to 50, pH up to 30, temperature up to 20 */
-    var ecS=cl((e-4.8)*18,0,50),phS=cl((p-6.6)*37,0,30),tS=cl((t-38.5)*7.5,0,20);
-    var risk=Math.round(cl(ecS+phS+tS,0,100));
-    S.risk=risk;S.ecN=cl((e-4)/4,0,1);S.phN=cl((p-6.6)/.9,0,1);S.tN=cl((t-37)/4.5,0,1);
-    S.clinical=risk>=65;
-    var r=el('risk');r.textContent=risk+'% Risk';r.style.color=risk>=40?'#ef4444':'#fff';
-    el('ion').textContent=(e*1.15).toFixed(1)+' Na/Cl';
-    var s=el('status');
-    if(risk>=65){s.textContent='Clinical Mastitis Alert';s.style.color='#ef4444'}
-    else if(risk>=20){s.textContent='Subclinical Risk Detected';s.style.color='#f59e0b'}
-    else{s.textContent='Healthy Milk';s.style.color='#22c55e'}
-    el('pipe').style.background=milk(risk);
-    /* purple glow + bulb ring follow pH */
-    var g=cl((p-6.7)/.6,0,1);
-    el('glow').style.opacity=g;
-    document.querySelector('.bulb').style.setProperty('--ring',(g*.85).toFixed(2));
-    /* thermistor tip: orange -> red with temperature */
-    var k=cl((t-38.5)/1.5,0,1);
-    document.querySelector('.th .body').style.setProperty('--tip','rgb('+[Math.round(lerp(234,239,k)),Math.round(lerp(88,44,k)),Math.round(lerp(12,60,k))]+')');
-  }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
 
-  function slideTo(pr){
-    cancelAnimationFrame(tween);
-    var from=[+ec.value,+ph.value,+tp.value],to=[pr.ec,pr.ph,pr.tp],t0=performance.now(),D=700;
-    (function step(now){
-      var k=Math.min(1,(now-t0)/D);k=1-Math.pow(1-k,3);
-      ec.value=lerp(from[0],to[0],k);ph.value=lerp(from[1],to[1],k);tp.value=lerp(from[2],to[2],k);
-      update();
-      if(k<1)tween=requestAnimationFrame(step);
-    })(t0);
-  }
-  sel.addEventListener('change',function(){slideTo(PRESETS[this.value])});
-  [ec,ph,tp].forEach(function(r){r.addEventListener('input',function(){cancelAnimationFrame(tween);sel.value='c';update()})});
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px
+    }
 
-  /* particle engine: 60-node pool. Low indexes = ion dots (count/size follow EC),
-     high indexes = fat crescents (count/colour follow temperature) */
-  var N=60,parts=[];
-  function resize(){
-    var r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;
-    W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0);
-    if(!running)draw();
-  }
-  function make(i,x){
-    return {i:i,x:x==null?Math.random()*W:x,y:12+Math.random()*(H-24),r:2+Math.random()*4.5,
-      v:1.8+Math.random()*2.6,ph:Math.random()*6.28,a:0,cs:4+Math.random()*3,
-      c:Math.random()<.8?'#00e5ff':'#00a2ff'};
-  }
-  for(var i=0;i<N;i++)parts.push(make(i));
+    .panel {
+      width: 100%;
+      max-width: 780px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .5)
+    }
 
-  function draw(){
-    ctx.clearRect(0,0,W,H);
-    var nd=Math.round(lerp(10,26,S.ecN)),nc=Math.round(lerp(4,34,S.tN));
-    var big=1+S.risk/100*.9,tc=S.tN;
-    var cr=Math.round(lerp(245,244,tc)),cg=Math.round(lerp(170,63,tc)),cb=Math.round(lerp(90,94,tc));
-    parts.forEach(function(p){
-      var isDot=p.i<nd,isCr=p.i>=N-nc,target=(isDot||isCr)?1:0;
-      p.a+=(target-p.a)*.08;
-      if(p.a<.02)return;
-      ctx.globalAlpha=p.a;ctx.beginPath();
-      if(p.i<N-34){ /* dot */
-        var R=p.r*big;
-        ctx.fillStyle=p.c;ctx.shadowColor=p.c;ctx.shadowBlur=8;
-        ctx.arc(p.x,p.y,R,0,6.28);ctx.fill();ctx.shadowBlur=0;
-      }else{ /* crescent */
-        ctx.strokeStyle='rgba('+cr+','+cg+','+cb+','+lerp(.5,.95,tc)+')';
-        ctx.lineWidth=2;ctx.arc(p.x,p.y,p.cs,Math.PI*1.1,Math.PI*1.9);ctx.stroke();
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 22px;
+      flex-wrap: wrap
+    }
+
+    .team-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 22px;
+      background: linear-gradient(135deg, #0a0d13 0%, #12161f 60%, #0d1420 100%);
+      border-bottom: 1px solid rgba(0, 162, 255, .25);
+      gap: 12px
+    }
+
+    .team-left {
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .team-logo {
+      height: 44px;
+      width: 44px;
+      object-fit: contain;
+      border-radius: 8px;
+      filter: drop-shadow(0 0 8px rgba(0, 162, 255, .5))
+    }
+
+    .team-name {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      background: linear-gradient(90deg, #00a2ff, #00ffcc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1
+    }
+
+    .team-label {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      -webkit-text-fill-color: var(--muted)
+    }
+
+    .sih-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: #00ffcc;
+      background: rgba(0, 255, 204, .08);
+      border: 1px solid rgba(0, 255, 204, .3);
+      padding: 6px 14px;
+      border-radius: 20px;
+      letter-spacing: .05em;
+      white-space: nowrap;
+      box-shadow: 0 0 10px rgba(0, 255, 204, .12)
+    }
+
+    .sel {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 14px
+    }
+
+    select {
+      appearance: none;
+      background: #2a2e36 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23cbd5e1' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 14px center;
+      color: #fff;
+      border: 0;
+      border-radius: 16px;
+      padding: 12px 38px 12px 18px;
+      font: 600 16px inherit;
+      cursor: pointer
+    }
+
+    select:focus-visible,
+    input:focus-visible,
+    button:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 2px
+    }
+
+    .chip {
+      background: #23272e;
+      color: #94a3b8;
+      font-size: 13px;
+      padding: 8px 16px;
+      border-radius: 14px
+    }
+
+    .cell {
+      position: relative;
+      height: 340px;
+      background: var(--cell);
+      border-top: 1px solid var(--line);
+      overflow: hidden;
+      background-image: linear-gradient(#151a21 1px, transparent 1px), linear-gradient(90deg, #151a21 1px, transparent 1px);
+      background-size: 48px 48px
+    }
+
+    .badge {
+      position: absolute;
+      top: 18px;
+      left: 26px;
+      z-index: 5;
+      background: #0f1319;
+      border: 1px solid #1f2933;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 14px;
+      font-weight: 600
+    }
+
+    .badge small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .04em;
+      font-weight: 600
+    }
+
+    .badge i {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--blue);
+      margin-right: 6px;
+      vertical-align: middle
+    }
+
+    #pb {
+      position: absolute;
+      top: 16px;
+      right: 22px;
+      z-index: 5;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 0;
+      background: #2a2e36;
+      color: #e2e8f0;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer
+    }
+
+    #pb:hover {
+      background: #343a44
+    }
+
+    .pipe {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 110px;
+      height: 120px;
+      background: #fdfdef;
+      transition: background .4s;
+      border-top: 3px solid #2a313b;
+      border-bottom: 3px solid #2a313b;
+      box-shadow: 0 -5px 0 -2px #0b0d10, 0 -7px 0 -2px #1c222b, 0 5px 0 -2px #0b0d10, 0 7px 0 -2px #1c222b
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block
+    }
+
+    .glow {
+      position: absolute;
+      top: 170px;
+      left: 55%;
+      width: 220px;
+      height: 220px;
+      margin: -110px 0 0 -110px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(168, 85, 247, .55), transparent 65%);
+      opacity: 0;
+      transition: opacity .5s;
+      pointer-events: none
+    }
+
+    .probe {
+      position: absolute;
+      top: 0;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 230px;
+      z-index: 3
+    }
+
+    .tag {
+      position: absolute;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0c1116;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid #1e4a44;
+      white-space: nowrap
+    }
+
+    .probe.ec .tag {
+      border-color: #1e4a44
+    }
+
+    .probe.ph .tag {
+      border-color: #1e4a44
+    }
+
+    .probe.th .tag {
+      border-color: #5a2434
+    }
+
+    .cap {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 32px;
+      height: 16px;
+      background: #2a323b;
+      border-radius: 3px 3px 0 0
+    }
+
+    .ec .wire {
+      position: absolute;
+      top: 96px;
+      width: 4px;
+      height: 60px;
+      background: #64748b;
+      border-radius: 2px
+    }
+
+    .ec .w1 {
+      left: 20px
+    }
+
+    .ec .w2 {
+      left: 36px
+    }
+
+    .ec .cup {
+      position: absolute;
+      top: 138px;
+      width: 10px;
+      height: 26px;
+      background: var(--blue);
+      border: 2px solid #64748b;
+      border-top: 0;
+      border-radius: 0 0 3px 3px
+    }
+
+    .ec .c1 {
+      left: 17px
+    }
+
+    .ec .c2 {
+      left: 33px
+    }
+
+    .ph .stem {
+      position: absolute;
+      top: 96px;
+      left: 50%;
+      width: 3px;
+      margin-left: -1.5px;
+      height: 40px;
+      background: #6d28d9
+    }
+
+    .ph .stem::before {
+      content: "";
+      position: absolute;
+      left: -4px;
+      top: 0;
+      width: 11px;
+      height: 28px;
+      background: #1e2229;
+      z-index: -1
+    }
+
+    .ph .bulb {
+      position: absolute;
+      top: 126px;
+      left: 50%;
+      width: 28px;
+      height: 28px;
+      margin-left: -14px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 32% 30%, #fff 0, #b8fff0 14%, var(--teal) 55%, #0a7a68 100%);
+      opacity: .9;
+      border: 2px solid rgba(255, 255, 255, var(--ring, 0));
+      box-shadow: 0 0 16px rgba(0, 255, 204, .5)
+    }
+
+    .th .body {
+      position: absolute;
+      top: 96px;
+      left: 50%;
+      width: 10px;
+      margin-left: -5px;
+      height: 72px;
+      border-radius: 5px 5px 6px 6px/5px 5px 8px 8px;
+      background: linear-gradient(#f8fafc 0, #cbd5e1 82%, var(--tip, #ea580c) 82%, var(--tip, #ea580c) 100%);
+      border: 1px solid #94a3b8
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      text-align: center;
+      background: #22262d;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 18px 10px
+    }
+
+    .metrics span {
+      display: block;
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 6px
+    }
+
+    .metrics b {
+      font-size: 17px
+    }
+
+    #status {
+      color: #22c55e;
+      transition: color .4s
+    }
+
+    #risk {
+      transition: color .4s
+    }
+
+    .ctrls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+      padding: 26px 24px 30px
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px 8px;
+      align-items: center
+    }
+
+    .row label {
+      grid-column: 1/-1;
+      font-size: 15px;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .row label i {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex: none
+    }
+
+    .row output {
+      font-size: 16px;
+      font-weight: 700;
+      min-width: 74px;
+      text-align: right
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #3b6cf6 var(--p, 50%), #334155 var(--p, 50%));
+      cursor: pointer
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #3b6cf6;
+      border: 0;
+      box-shadow: 0 0 0 4px rgba(59, 108, 246, .2)
+    }
+
+    input[type=range]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #3b6cf6;
+      border: 0
+    }
+
+    @media(max-width:640px) {
+      .ctrls {
+        grid-template-columns: 1fr
       }
-    });
-    ctx.globalAlpha=1;
-  }
-  function tick(){
-    parts.forEach(function(p){
-      var v=p.v*(1+S.risk/250);
-      if(p.i<N-34){ /* ions drag and bunch around the EC probe and pH bulb */
-        var d1=(p.x-.36*W)/36,d2=(p.x-.55*W)/44;
-        v*=1-.55*S.ecN*Math.exp(-d1*d1)-.35*S.phN*Math.exp(-d2*d2);
+
+      .tag {
+        font-size: 11px;
+        padding: 3px 6px
       }
-      p.x+=v;p.ph+=.04;p.y+=Math.sin(p.ph)*.3;
-      if(p.x>W+20){var n=make(p.i,-20);for(var k in n)if(k!=='a')p[k]=n[k]}
-    });
-    draw();
-    raf=requestAnimationFrame(tick);
-  }
-  el('pb').addEventListener('click',function(){
-    running=!running;
-    this.textContent=running?'II':'▶';
-    if(running){raf=requestAnimationFrame(tick)}else{cancelAnimationFrame(raf)}
-  });
-  window.addEventListener('resize',resize);
-  update();resize();raf=requestAnimationFrame(tick);
-})();
-</script>
+
+      .chip {
+        display: none
+      }
+
+      .badge {
+        left: 12px
+      }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      * {
+        transition: none !important
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="panel">
+    <div class="team-bar">
+      <div class="team-left">
+        <img src="ChatGPT Image Sep 29, 2026, 11_38_44 PM.png" alt="Ctrl_Alt_Hustle logo" class="team-logo">
+        <div>
+          <div class="team-name">Ctrl_Alt_Hustle</div>
+          <div class="team-label">Hackathon Team</div>
+        </div>
+      </div>
+      <div class="sih-badge">SIH PS 26109</div>
+    </div>
+    <header>
+      <div class="sel"><label for="preset">Testing Condition Profile:</label>
+        <select id="preset">
+          <option value="c" hidden>Custom Setup</option>
+          <option value="0">Healthy / Normal</option>
+          <option value="1">Subclinical Activity</option>
+          <option value="2">Clinical Mastitis</option>
+        </select>
+      </div>
+      <div class="chip">DIY Multi-Sensor Analytics Node</div>
+    </header>
+
+    <section class="cell">
+      <div class="badge"><small>FLOW DIALOGUE</small><i></i>Raw Milk Inflow Stream</div>
+      <button id="pb" aria-label="Pause or resume flow">II</button>
+      <div class="pipe" id="pipe" style="background:#fdfdef"><canvas id="cv"></canvas></div>
+      <div class="glow" id="glow"></div>
+      <div class="probe ec" style="left:36%">
+        <div class="tag">EC Probe</div>
+        <div class="cap"></div>
+        <div class="wire w1"></div>
+        <div class="wire w2"></div>
+        <div class="cup c1"></div>
+        <div class="cup c2"></div>
+      </div>
+      <div class="probe ph" style="left:55%">
+        <div class="tag">pH Glass Bulb</div>
+        <div class="cap"></div>
+        <div class="stem"></div>
+        <div class="bulb"></div>
+      </div>
+      <div class="probe th" style="left:71%">
+        <div class="tag">Thermistor Tip</div>
+        <div class="cap"></div>
+        <div class="body"></div>
+      </div>
+    </section>
+
+    <section class="metrics">
+      <div><span>Alert Index</span><b id="risk">0% Risk</b></div>
+      <div><span>Health Status</span><b id="status">Healthy Milk</b></div>
+      <div><span>Ion Multiplier</span><b id="ion">5.5 Na/Cl</b></div>
+    </section>
+
+    <section class="ctrls">
+      <div class="row"><label for="ec"><i style="background:var(--blue)"></i>Electrical Conductivity</label><input
+          id="ec" type="range" min="4" max="8.5" step="0.1" value="4.8"><output id="ecv">4.8 mS/cm</output></div>
+      <div class="row"><label for="ph"><i style="background:#10d9a0"></i>Milk pH Factor</label><input id="ph"
+          type="range" min="6.2" max="7.6" step="0.05" value="6.6"><output id="phv">6.60 pH</output></div>
+      <div class="row"><label for="tp"><i style="background:var(--pink)"></i>Inline Temperature</label><input id="tp"
+          type="range" min="37" max="42" step="0.1" value="38.5"><output id="tpv">38.5 °C</output></div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var PRESETS = { 0: { ec: 4.8, ph: 6.6, tp: 38.5 }, 1: { ec: 6.2, ph: 6.9, tp: 39.1 }, 2: { ec: 7.8, ph: 7.3, tp: 40.5 } };
+      var el = function (id) { return document.getElementById(id) };
+      var ec = el('ec'), ph = el('ph'), tp = el('tp'), sel = el('preset'), cv = el('cv'), ctx = cv.getContext('2d');
+      var running = true, raf = 0, tween = 0, W = 0, H = 0;
+      var S = { risk: 0, ecN: 0, phN: 0, tN: 0, clinical: false };
+      var CLR = [[15, [253, 253, 239]], [31, [218, 218, 209]], [48, [196, 197, 187]], [80, [147, 147, 133]], [100, [126, 127, 117]]];
+      function milk(r) {
+        if (r <= CLR[0][0]) return 'rgb(' + CLR[0][1] + ')';
+        for (var i = 1; i < CLR.length; i++) {
+          if (r <= CLR[i][0]) {
+            var a = CLR[i - 1], b = CLR[i], k = (r - a[0]) / (b[0] - a[0]);
+            return 'rgb(' + a[1].map(function (v, n) { return Math.round(v + (b[1][n] - v) * k) }).join(',') + ')'
+          }
+        }
+        return 'rgb(' + CLR[CLR.length - 1][1] + ')';
+      }
+      function lerp(a, b, t) { return a + (b - a) * t }
+      var cl = function (v, a, b) { return Math.max(a, Math.min(b, v)) };
+
+      function update() {
+        var e = +ec.value, p = +ph.value, t = +tp.value;
+        [ec, ph, tp].forEach(function (r) { r.style.setProperty('--p', ((r.value - r.min) / (r.max - r.min) * 100) + '%') });
+        el('ecv').textContent = e.toFixed(1) + ' mS/cm';
+        el('phv').textContent = p.toFixed(2) + ' pH';
+        el('tpv').textContent = t.toFixed(1) + ' °C';
+        /* alert index: EC up to 50, pH up to 30, temperature up to 20 */
+        var ecS = cl((e - 4.8) * 18, 0, 50), phS = cl((p - 6.6) * 37, 0, 30), tS = cl((t - 38.5) * 7.5, 0, 20);
+        var risk = Math.round(cl(ecS + phS + tS, 0, 100));
+        S.risk = risk; S.ecN = cl((e - 4) / 4, 0, 1); S.phN = cl((p - 6.6) / .9, 0, 1); S.tN = cl((t - 37) / 4.5, 0, 1);
+        S.clinical = risk >= 65;
+        var r = el('risk'); r.textContent = risk + '% Risk'; r.style.color = risk >= 40 ? '#ef4444' : '#fff';
+        el('ion').textContent = (e * 1.15).toFixed(1) + ' Na/Cl';
+        var s = el('status');
+        if (risk >= 65) { s.textContent = 'Clinical Mastitis Alert'; s.style.color = '#ef4444' }
+        else if (risk >= 20) { s.textContent = 'Subclinical Risk Detected'; s.style.color = '#f59e0b' }
+        else { s.textContent = 'Healthy Milk'; s.style.color = '#22c55e' }
+        el('pipe').style.background = milk(risk);
+        /* purple glow + bulb ring follow pH */
+        var g = cl((p - 6.7) / .6, 0, 1);
+        el('glow').style.opacity = g;
+        document.querySelector('.bulb').style.setProperty('--ring', (g * .85).toFixed(2));
+        /* thermistor tip: orange -> red with temperature */
+        var k = cl((t - 38.5) / 1.5, 0, 1);
+        document.querySelector('.th .body').style.setProperty('--tip', 'rgb(' + [Math.round(lerp(234, 239, k)), Math.round(lerp(88, 44, k)), Math.round(lerp(12, 60, k))] + ')');
+      }
+
+      function slideTo(pr) {
+        cancelAnimationFrame(tween);
+        var from = [+ec.value, +ph.value, +tp.value], to = [pr.ec, pr.ph, pr.tp], t0 = performance.now(), D = 700;
+        (function step(now) {
+          var k = Math.min(1, (now - t0) / D); k = 1 - Math.pow(1 - k, 3);
+          ec.value = lerp(from[0], to[0], k); ph.value = lerp(from[1], to[1], k); tp.value = lerp(from[2], to[2], k);
+          update();
+          if (k < 1) tween = requestAnimationFrame(step);
+        })(t0);
+      }
+      sel.addEventListener('change', function () { slideTo(PRESETS[this.value]) });
+      [ec, ph, tp].forEach(function (r) { r.addEventListener('input', function () { cancelAnimationFrame(tween); sel.value = 'c'; update() }) });
+
+      /* particle engine: 60-node pool. Low indexes = ion dots (count/size follow EC),
+         high indexes = fat crescents (count/colour follow temperature) */
+      var N = 60, parts = [];
+      function resize() {
+        var r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+        W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0);
+        if (!running) draw();
+      }
+      function make(i, x) {
+        return {
+          i: i, x: x == null ? Math.random() * W : x, y: 12 + Math.random() * (H - 24), r: 2 + Math.random() * 4.5,
+          v: 1.8 + Math.random() * 2.6, ph: Math.random() * 6.28, a: 0, cs: 4 + Math.random() * 3,
+          c: Math.random() < .8 ? '#00e5ff' : '#00a2ff'
+        };
+      }
+      for (var i = 0; i < N; i++)parts.push(make(i));
+
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+        var nd = Math.round(lerp(10, 26, S.ecN)), nc = Math.round(lerp(4, 34, S.tN));
+        var big = 1 + S.risk / 100 * .9, tc = S.tN;
+        var cr = Math.round(lerp(245, 244, tc)), cg = Math.round(lerp(170, 63, tc)), cb = Math.round(lerp(90, 94, tc));
+        parts.forEach(function (p) {
+          var isDot = p.i < nd, isCr = p.i >= N - nc, target = (isDot || isCr) ? 1 : 0;
+          p.a += (target - p.a) * .08;
+          if (p.a < .02) return;
+          ctx.globalAlpha = p.a; ctx.beginPath();
+          if (p.i < N - 34) { /* dot */
+            var R = p.r * big;
+            ctx.fillStyle = p.c; ctx.shadowColor = p.c; ctx.shadowBlur = 8;
+            ctx.arc(p.x, p.y, R, 0, 6.28); ctx.fill(); ctx.shadowBlur = 0;
+          } else { /* crescent */
+            ctx.strokeStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + lerp(.5, .95, tc) + ')';
+            ctx.lineWidth = 2; ctx.arc(p.x, p.y, p.cs, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+          }
+        });
+        ctx.globalAlpha = 1;
+      }
+      function tick() {
+        parts.forEach(function (p) {
+          var v = p.v * (1 + S.risk / 250);
+          if (p.i < N - 34) { /* ions drag and bunch around the EC probe and pH bulb */
+            var d1 = (p.x - .36 * W) / 36, d2 = (p.x - .55 * W) / 44;
+            v *= 1 - .55 * S.ecN * Math.exp(-d1 * d1) - .35 * S.phN * Math.exp(-d2 * d2);
+          }
+          p.x += v; p.ph += .04; p.y += Math.sin(p.ph) * .3;
+          if (p.x > W + 20) { var n = make(p.i, -20); for (var k in n) if (k !== 'a') p[k] = n[k] }
+        });
+        draw();
+        raf = requestAnimationFrame(tick);
+      }
+      el('pb').addEventListener('click', function () {
+        running = !running;
+        this.textContent = running ? 'II' : '▶';
+        if (running) { raf = requestAnimationFrame(tick) } else { cancelAnimationFrame(raf) }
+      });
+      window.addEventListener('resize', resize);
+      update(); resize(); raf = requestAnimationFrame(tick);
+    })();
+  </script>
 </body>
+
 </html>
